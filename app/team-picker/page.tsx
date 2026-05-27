@@ -110,10 +110,6 @@ function pickTwoDifferent<T extends { name: string }>(teams: T[]) {
   return [first, second] as [T, T];
 }
 
-export const metadata = {
-  title: "EA26 Team Picker",
-};
-
 export default function TeamPickerPage() {
   const [teamList, setTeamList] = useState(defaultTeams.join("\n"));
   const [barryTeam, setBarryTeam] = useState<{ name: string; league: string; rating: number } | null>(null);
