@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+
 const defaultTeams = [
   "Arsenal | Premier League | 84",
   "Aston Villa | Premier League | 82",
