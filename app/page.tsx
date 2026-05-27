@@ -136,9 +136,6 @@ export default function HomePage() {
             <a href="mailto:barry.carbis@sky.com" className="button primary">
               Contact Barry
             </a>
-            <a href="/team-picker" className="button secondary">
-              View Team Picker
-            </a>
             <a href="#experience" className="button secondary">
               View Experience
             </a>
