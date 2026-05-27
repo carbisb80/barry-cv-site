@@ -184,8 +184,8 @@ export default function TeamPickerPage() {
           </div>
 
           <div className="controls">
-            <button onClick={pickTeams}>?? Pick Teams</button>
-            <button className="secondary" onClick={pickFairMatch}>?? Fair Match</button>
+            <button onClick={pickTeams}>Pick Teams</button>
+            <button className="secondary" onClick={pickFairMatch}>Fair Match</button>
           </div>
 
           <div className="small-controls">
