@@ -151,7 +151,7 @@ export default function TeamPickerPage() {
     setDisplayAlanaTeam(finalAlanaTeam);
 
     const startTime = Date.now();
-    const duration = 4000; // 4 seconds
+    const duration = 3000; // 4 seconds
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       
