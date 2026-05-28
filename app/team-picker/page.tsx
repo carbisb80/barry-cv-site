@@ -368,6 +368,7 @@ export default function TeamPickerPage() {
           line-height: 1.05;
           margin-bottom: 10px;
           word-break: break-word;
+          min-height: 5.9rem;
         }
 
         .league {
