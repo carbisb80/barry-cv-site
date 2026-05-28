@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 
 const defaultTeams = [
@@ -115,6 +115,10 @@ export default function TeamPickerPage() {
   const [teamList, setTeamList] = useState(defaultTeams.join("\n"));
   const [barryTeam, setBarryTeam] = useState<{ name: string; league: string; rating: number } | null>(null);
   const [alanaTeam, setAlanaTeam] = useState<{ name: string; league: string; rating: number } | null>(null);
+  const [isFlickering, setIsFlickering] = useState(false);
+  const [displayBarryTeam, setDisplayBarryTeam] = useState<{ name: string; league: string; rating: number } | null>(null);
+  const [displayAlanaTeam, setDisplayAlanaTeam] = useState<{ name: string; league: string; rating: number } | null>(null);
+  const flickerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("ea26Teams");
@@ -123,13 +127,57 @@ export default function TeamPickerPage() {
     }
   }, []);
 
+  useEffect(() => {
+    // Cleanup interval on unmount
+    return () => {
+      if (flickerIntervalRef.current) {
+        clearInterval(flickerIntervalRef.current);
+      }
+    };
+  }, []);
+
   const teams = useMemo(() => getTeamsFromText(teamList), [teamList]);
+
+  function startFlickeringAnimation(finalBarryTeam: { name: string; league: string; rating: number }, finalAlanaTeam: { name: string; league: string; rating: number }) {
+    // Clear any existing interval
+    if (flickerIntervalRef.current) {
+      clearInterval(flickerIntervalRef.current);
+    }
+
+    setIsFlickering(true);
+    setBarryTeam(finalBarryTeam);
+    setAlanaTeam(finalAlanaTeam);
+    setDisplayBarryTeam(finalBarryTeam);
+    setDisplayAlanaTeam(finalAlanaTeam);
+
+    const startTime = Date.now();
+    const duration = 4000; // 4 seconds
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      
+      if (elapsed >= duration) {
+        clearInterval(interval);
+        flickerIntervalRef.current = null;
+        setIsFlickering(false);
+        setDisplayBarryTeam(finalBarryTeam);
+        setDisplayAlanaTeam(finalAlanaTeam);
+      } else {
+        // Show random teams during flickering
+        const randomPair = pickTwoDifferent(teams);
+        if (randomPair) {
+          setDisplayBarryTeam(randomPair[0]);
+          setDisplayAlanaTeam(randomPair[1]);
+        }
+      }
+    }, 80); // Change teams every 80ms
+    
+    flickerIntervalRef.current = interval;
+  }
 
   function pickTeams() {
     const picked = pickTwoDifferent(teams);
     if (!picked) return;
-    setBarryTeam(picked[0]);
-    setAlanaTeam(picked[1]);
+    startFlickeringAnimation(picked[0], picked[1]);
   }
 
   function pickFairMatch() {
@@ -141,19 +189,27 @@ export default function TeamPickerPage() {
       attempts += 1;
     }
     if (!picked) return;
-    setBarryTeam(picked[0]);
-    setAlanaTeam(picked[1]);
+    startFlickeringAnimation(picked[0], picked[1]);
   }
 
   function swapTeams() {
     if (!barryTeam || !alanaTeam) return;
     setBarryTeam(alanaTeam);
     setAlanaTeam(barryTeam);
+    setDisplayBarryTeam(alanaTeam);
+    setDisplayAlanaTeam(barryTeam);
   }
 
   function resetTeams() {
+    if (flickerIntervalRef.current) {
+      clearInterval(flickerIntervalRef.current);
+      flickerIntervalRef.current = null;
+    }
     setBarryTeam(null);
     setAlanaTeam(null);
+    setDisplayBarryTeam(null);
+    setDisplayAlanaTeam(null);
+    setIsFlickering(false);
   }
 
   function saveTeams() {
@@ -171,15 +227,15 @@ export default function TeamPickerPage() {
 
         <div className="panel">
           <div className="teams">
-            <article className="team-card">
+            <article className={`team-card ${isFlickering ? 'flickering' : ''}`}>
               <div className="player">Barry</div>
-              <div className="chosen-team">{barryTeam ? barryTeam.name : "Tap Pick Teams"}</div>
-              <div className="league">{barryTeam ? `${barryTeam.league} � Rating ${barryTeam.rating}` : "Ready"}</div>
+              <div className="chosen-team">{displayBarryTeam ? displayBarryTeam.name : "Tap Pick Teams"}</div>
+              <div className="league">{displayBarryTeam ? `${displayBarryTeam.league} • Rating ${displayBarryTeam.rating}` : "Ready"}</div>
             </article>
-            <article className="team-card">
+            <article className={`team-card ${isFlickering ? 'flickering' : ''}`}>
               <div className="player">Alana</div>
-              <div className="chosen-team">{alanaTeam ? alanaTeam.name : "Tap Pick Teams"}</div>
-              <div className="league">{alanaTeam ? `${alanaTeam.league} � Rating ${alanaTeam.rating}` : "Ready"}</div>
+              <div className="chosen-team">{displayAlanaTeam ? displayAlanaTeam.name : "Tap Pick Teams"}</div>
+              <div className="league">{displayAlanaTeam ? `${displayAlanaTeam.league} • Rating ${displayAlanaTeam.rating}` : "Ready"}</div>
             </article>
           </div>
 
@@ -279,6 +335,23 @@ export default function TeamPickerPage() {
           top: -40px;
           background: rgba(244, 197, 66, 0.14);
           border-radius: 50%;
+        }
+
+        .team-card.flickering {
+          animation: flicker 0.08s infinite;
+          box-shadow: 0 0 20px rgba(244, 197, 66, 0.4);
+        }
+
+        @keyframes flicker {
+          0% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.7;
+          }
+          100% {
+            opacity: 1;
+          }
         }
 
         .player {
