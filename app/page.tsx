@@ -233,6 +233,7 @@ const handleDownloadPDF = useCallback(async () => {
       y += imgHeight + 10;
     }
 
+    
     pdf.save("Barry-Carbis-CV.pdf");
   } catch (error) {
     console.error(error);
