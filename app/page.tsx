@@ -160,17 +160,38 @@ export default function HomePage() {
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const pdfTemplateRef = useRef<HTMLDivElement | null>(null);
 
-  const handleDownloadPDF = useCallback(async () => {
-    if (isGeneratingPdf || !pdfTemplateRef.current) return;
-    setIsGeneratingPdf(true);
+const handleDownloadPDF = useCallback(async () => {
+  if (isGeneratingPdf || !pdfTemplateRef.current) return;
+  setIsGeneratingPdf(true);
 
-    try {
-      const [{ jsPDF }, html2canvas] = await Promise.all([
-        import("jspdf"),
-        import("html2canvas").then((module) => module.default || module),
-      ]);
+  try {
+    const [{ jsPDF }, html2canvas] = await Promise.all([
+      import("jspdf"),
+      import("html2canvas").then((module) => module.default || module),
+    ]);
 
-      const element = pdfTemplateRef.current;
+    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const marginX = 28;
+    const marginTop = 28;
+    const marginBottom = 28;
+    const usableWidth = pageWidth - marginX * 2;
+    const usableHeight = pageHeight - marginTop - marginBottom;
+
+    let y = marginTop;
+
+    const addFooter = (pageNo: number) => {
+      pdf.setFontSize(8);
+      pdf.setTextColor("#7A8194");
+      pdf.text(`Barry Carbis CV | Page ${pageNo}`, pageWidth / 2, pageHeight - 12, {
+        align: "center",
+      });
+    };
+
+    const addElementToPdf = async (element: HTMLElement, forceNewPage = false) => {
       const canvas = await html2canvas(element, {
         backgroundColor: "#ffffff",
         scale: 2,
@@ -180,43 +201,60 @@ export default function HomePage() {
       });
 
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ unit: "pt", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const ratio = pageWidth / canvas.width;
-      const imgHeight = canvas.height * ratio;
+      const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
-      } else {
-        const pageCanvasHeight = Math.floor(pageHeight / ratio);
-        let position = 0;
-        let pageIndex = 0;
-
-        while (position < canvas.height) {
-          const sliceHeight = Math.min(pageCanvasHeight, canvas.height - position);
-          const pageCanvas = document.createElement("canvas");
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sliceHeight;
-          const context = pageCanvas.getContext("2d");
-          if (context) {
-            context.drawImage(canvas, 0, position, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-          }
-          const pageData = pageCanvas.toDataURL("image/png");
-          if (pageIndex > 0) pdf.addPage();
-          pdf.addImage(pageData, "PNG", 0, 0, pageWidth, sliceHeight * ratio);
-          position += sliceHeight;
-          pageIndex += 1;
-        }
+      if (forceNewPage && y > marginTop) {
+        addFooter(pdf.getNumberOfPages());
+        pdf.addPage();
+        y = marginTop;
       }
 
-      pdf.save("Barry-Carbis-CV.pdf");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsGeneratingPdf(false);
+      if (y + imgHeight > pageHeight - marginBottom) {
+        addFooter(pdf.getNumberOfPages());
+        pdf.addPage();
+        y = marginTop;
+      }
+
+      pdf.addImage(imgData, "PNG", marginX, y, usableWidth, imgHeight);
+      y += imgHeight + 10;
+    };
+
+    const element = pdfTemplateRef.current;
+
+    const header = element.querySelector("[data-pdf-section='header']") as HTMLElement | null;
+    const profile = element.querySelector("[data-pdf-section='profile']") as HTMLElement | null;
+    const achievements = element.querySelector("[data-pdf-section='achievements']") as HTMLElement | null;
+    const skills = element.querySelector("[data-pdf-section='skills']") as HTMLElement | null;
+    const experienceHeading = element.querySelector("[data-pdf-section='experience-heading']") as HTMLElement | null;
+    const jobs = Array.from(
+      element.querySelectorAll("[data-pdf-section='experience-item']")
+    ) as HTMLElement[];
+    const earlierCareerSection = element.querySelector(
+      "[data-pdf-section='earlier-career']"
+    ) as HTMLElement | null;
+
+    if (header) await addElementToPdf(header);
+    if (profile) await addElementToPdf(profile);
+    if (achievements) await addElementToPdf(achievements);
+    if (skills) await addElementToPdf(skills);
+    if (experienceHeading) await addElementToPdf(experienceHeading);
+
+    for (const job of jobs) {
+      await addElementToPdf(job);
     }
-  }, [isGeneratingPdf]);
+
+    if (earlierCareerSection) {
+      await addElementToPdf(earlierCareerSection);
+    }
+
+    addFooter(pdf.getNumberOfPages());
+    pdf.save("Barry-Carbis-CV.pdf");
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setIsGeneratingPdf(false);
+  }
+}, [isGeneratingPdf]);
 
   const handleDownloadDocx = useCallback(async () => {
     if (isGeneratingDocx) return;
