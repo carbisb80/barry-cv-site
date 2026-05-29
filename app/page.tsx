@@ -69,13 +69,11 @@ const experience = [
     role: "Test Manager & Acting Agile Coach",
     company: "Opus2",
     summary:
-      "Owned quality strategy across a product portfolio and built one of the organisation's strongest QA departments during a period of delivery and process transformation. Acted as Scrum Master and Agile coach, driving department-wide adoption of modern Agile practices.",
+      "Owned quality strategy and built one of the organisation's strongest QA departments. Acted as Scrum Master and Agile coach, driving department-wide adoption of modern Agile practices.",
     bullets: [
-      "Introduced modern testing practices, CI/CD thinking and exploratory approaches.",
-      "Championed department-wide Agile adoption, implementing Scrum ceremonies and improving collaboration between engineering, testing and delivery teams.",
-      "Acted as Scrum Master and Agile coach, mentoring teams through Agile transformation and establishing sustainable development practices.",
-      "Defined KPIs for defect detection, quality visibility and test coverage.",
-      "Reduced regression effort from 24 hours to 2 hours while increasing coverage.",
+      "Introduced modern testing practices, CI/CD integration, and exploratory testing approaches.",
+      "Led department-wide Agile transformation as Scrum Master and Agile coach, implementing Scrum ceremonies and improving cross-team collaboration.",
+      "Defined KPIs for quality metrics and achieved 24-hour to 2-hour regression reduction while increasing coverage.",
     ],
   },
   {
