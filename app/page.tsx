@@ -155,6 +155,27 @@ function SectionHeading({
   );
 }
 
+function PdfLabel({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        fontSize: 12,
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        color: "#ffffff",
+        background: "#0f162c",
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "4px 8px",
+        borderRadius: 4,
+        marginBottom: 10,
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
@@ -171,83 +192,47 @@ const handleDownloadPDF = useCallback(async () => {
     ]);
 
     const pdf = new jsPDF({ unit: "pt", format: "a4" });
-
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
-    const marginX = 28;
-    const marginTop = 28;
-    const marginBottom = 28;
-    const usableWidth = pageWidth - marginX * 2;
-    const usableHeight = pageHeight - marginTop - marginBottom;
+    const margin = 28;
+    const usableWidth = pageWidth - margin * 2;
+    const bottomLimit = pageHeight - margin;
 
-    let y = marginTop;
+    let y = margin;
 
-    const addFooter = (pageNo: number) => {
-      pdf.setFontSize(8);
-      pdf.setTextColor("#7A8194");
-      pdf.text(`Barry Carbis CV | Page ${pageNo}`, pageWidth / 2, pageHeight - 12, {
-        align: "center",
-      });
-    };
+    const blocks = Array.from(
+      pdfTemplateRef.current.querySelectorAll(".pdf-block")
+    ) as HTMLElement[];
 
-    const addElementToPdf = async (element: HTMLElement, forceNewPage = false) => {
-      const canvas = await html2canvas(element, {
+    for (const block of blocks) {
+      const forceNewPage = block.classList.contains("pdf-new-page");
+
+      if (forceNewPage && y > margin) {
+        pdf.addPage();
+        y = margin;
+      }
+
+      const canvas = await html2canvas(block, {
         backgroundColor: "#ffffff",
         scale: 2,
         useCORS: true,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
+        windowWidth: block.scrollWidth,
+        windowHeight: block.scrollHeight,
       });
 
       const imgData = canvas.toDataURL("image/png");
       const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
-      if (forceNewPage && y > marginTop) {
-        addFooter(pdf.getNumberOfPages());
+      if (y + imgHeight > bottomLimit && y > margin) {
         pdf.addPage();
-        y = marginTop;
+        y = margin;
       }
 
-      if (y + imgHeight > pageHeight - marginBottom) {
-        addFooter(pdf.getNumberOfPages());
-        pdf.addPage();
-        y = marginTop;
-      }
-
-      pdf.addImage(imgData, "PNG", marginX, y, usableWidth, imgHeight);
+      pdf.addImage(imgData, "PNG", margin, y, usableWidth, imgHeight);
       y += imgHeight + 10;
-    };
-
-    const element = pdfTemplateRef.current;
-
-    const header = element.querySelector("[data-pdf-section='header']") as HTMLElement | null;
-    const profile = element.querySelector("[data-pdf-section='profile']") as HTMLElement | null;
-    const achievements = element.querySelector("[data-pdf-section='achievements']") as HTMLElement | null;
-    const skills = element.querySelector("[data-pdf-section='skills']") as HTMLElement | null;
-    const experienceHeading = element.querySelector("[data-pdf-section='experience-heading']") as HTMLElement | null;
-    const jobs = Array.from(
-      element.querySelectorAll("[data-pdf-section='experience-item']")
-    ) as HTMLElement[];
-    const earlierCareerSection = element.querySelector(
-      "[data-pdf-section='earlier-career']"
-    ) as HTMLElement | null;
-
-    if (header) await addElementToPdf(header);
-    if (profile) await addElementToPdf(profile);
-    if (achievements) await addElementToPdf(achievements);
-    if (skills) await addElementToPdf(skills);
-    if (experienceHeading) await addElementToPdf(experienceHeading);
-
-    for (const job of jobs) {
-      await addElementToPdf(job);
     }
 
-    if (earlierCareerSection) {
-      await addElementToPdf(earlierCareerSection);
-    }
-
-    addFooter(pdf.getNumberOfPages());
     pdf.save("Barry-Carbis-CV.pdf");
   } catch (error) {
     console.error(error);
@@ -802,103 +787,94 @@ const handleDownloadPDF = useCallback(async () => {
         </div>
       </section>
 
-      <div
-        ref={pdfTemplateRef}
-        style={{
-          position: "fixed",
-          left: -9999,
-          top: 0,
-          width: 800,
-          padding: 28,
-          background: "#ffffff",
-          color: "#232942",
-          fontFamily: "Arial, sans-serif",
-          lineHeight: 1.45,
-          zIndex: -1,
-        }}
-      >
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 32, fontWeight: 700, marginBottom: 6 }}>BARRY CARBIS</div>
-          <div style={{ fontSize: 14, color: "#ffffff", background: "#0f162c", display: "inline-block", padding: "6px 12px", borderRadius: 6, marginBottom: 10 }}>
-            Lead Test Manager | Quality Engineering Leader
-          </div>
-          <div style={{ marginBottom: 4, fontSize: 14, color: "#232942" }}>
-            Quality Strategy • Automation Transformation • Playwright • CI/CD • Release Confidence
-          </div>
-          <div style={{ fontSize: 12, color: "#5c647d" }}>
-            barry.carbis@sky.com · 07701 078087 · East Ayrshire, United Kingdom
-          </div>
-          <div style={{ height: 2, background: "#d6b25e", margin: "16px 0" }} />
-        </div>
+<div
+  ref={pdfTemplateRef}
+  style={{
+    position: "fixed",
+    left: -9999,
+    top: 0,
+    width: 800,
+    padding: 28,
+    background: "#ffffff",
+    color: "#232942",
+    fontFamily: "Arial, sans-serif",
+    lineHeight: 1.45,
+    zIndex: -1,
+  }}
+>
+  <div className="pdf-block" style={{ marginBottom: 18 }}>
+    <div style={{ fontSize: 32, fontWeight: 700, marginBottom: 6 }}>BARRY CARBIS</div>
+    <div style={{ fontSize: 14, color: "#ffffff", background: "#0f162c", display: "inline-block", padding: "6px 12px", borderRadius: 6, marginBottom: 10 }}>
+      Lead Test Manager | Quality Engineering Leader
+    </div>
+    <div style={{ marginBottom: 4, fontSize: 14 }}>
+      Quality Strategy • Automation Transformation • Playwright • CI/CD • Release Confidence
+    </div>
+    <div style={{ fontSize: 12, color: "#5c647d" }}>
+      barry.carbis@sky.com · 07701 078087 · East Ayrshire, United Kingdom
+    </div>
+    <div style={{ height: 2, background: "#d6b25e", margin: "16px 0" }} />
+  </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: "#ffffff", background: "#0f162c", display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: 4, marginBottom: 10 }}>
-            Personal Profile
-          </div>
-          <div style={{ fontSize: 11, color: "#232942" }}>
-            Accomplished Quality Engineering Leader with 15+ years' experience across financial services, SaaS, mobile, pharma and enterprise platforms. Strong record of modernising QA functions, building scalable automation, improving release confidence and translating quality into measurable business outcomes.
-          </div>
-        </div>
+  <div className="pdf-block" style={{ marginBottom: 18 }}>
+    <PdfLabel text="Personal Profile" />
+    <div style={{ fontSize: 11 }}>
+      Accomplished Quality Engineering Leader with 15+ years' experience across financial services, SaaS, mobile, pharma and enterprise platforms. Strong record of modernising QA functions, building scalable automation, improving release confidence and translating quality into measurable business outcomes.
+    </div>
+  </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: "#ffffff", background: "#0f162c", display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: 4, marginBottom: 10 }}>
-            Career Achievements
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {highlights.map((item) => (
-              <div key={item.label} style={{ flex: "1 1 180px", minWidth: 180, background: "#f5f7fa", borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#0f162c", marginBottom: 6 }}>{sanitizeText(item.value)}</div>
-                <div style={{ fontSize: 10, color: "#5c647d", lineHeight: 1.4 }}>{sanitizeText(item.label)}</div>
-              </div>
-            ))}
-          </div>
+  <div className="pdf-block" style={{ marginBottom: 18 }}>
+    <PdfLabel text="Career Achievements" />
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {highlights.map((item) => (
+        <div key={item.label} style={{ flex: "1 1 180px", minWidth: 180, background: "#f5f7fa", borderRadius: 8, padding: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#0f162c", marginBottom: 6 }}>{sanitizeText(item.value)}</div>
+          <div style={{ fontSize: 10, color: "#5c647d" }}>{sanitizeText(item.label)}</div>
         </div>
+      ))}
+    </div>
+  </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: "#ffffff", background: "#0f162c", display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: 4, marginBottom: 10 }}>
-            Key Skills
-          </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {capabilities.map((item) => (
-              <div key={item} style={{ fontSize: 10, color: "#232942", border: "1px solid #e2e6ee", borderRadius: 20, padding: "6px 10px" }}>
-                {sanitizeText(item)}
-              </div>
-            ))}
-          </div>
+  <div className="pdf-block" style={{ marginBottom: 18 }}>
+    <PdfLabel text="Key Skills" />
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      {capabilities.map((item) => (
+        <div key={item} style={{ fontSize: 10, border: "1px solid #e2e6ee", borderRadius: 20, padding: "6px 10px" }}>
+          {sanitizeText(item)}
         </div>
+      ))}
+    </div>
+  </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: "#ffffff", background: "#0f162c", display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: 4, marginBottom: 10 }}>
-            Professional Experience
-          </div>
-          {experience.map((job) => (
-            <div key={`${job.company}-${job.period}`} style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: "#0f162c", fontWeight: 700 }}>{sanitizeText(job.company.toUpperCase())}</div>
-              <div style={{ fontSize: 10, color: "#d6b25e", marginBottom: 6 }}>{sanitizeText(job.period)}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#232942", marginBottom: 6 }}>{sanitizeText(job.role)}</div>
-              <div style={{ fontSize: 10, color: "#232942", marginBottom: 8 }}>{sanitizeText(job.summary)}</div>
-              <ul style={{ margin: 0, paddingLeft: 18, color: "#232942" }}>
-                {job.bullets.map((bullet, idx) => (
-                  <li key={`${job.company}-${idx}`} style={{ marginBottom: 6, fontSize: 10, lineHeight: 1.4 }}>
-                    {sanitizeText(bullet)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+  <div className="pdf-block" style={{ marginBottom: 10 }}>
+    <PdfLabel text="Professional Experience" />
+  </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: "#ffffff", background: "#0f162c", display: "inline-flex", alignItems: "center", padding: "4px 8px", borderRadius: 4, marginBottom: 10 }}>
-            Earlier Career
-          </div>
-          <ul style={{ margin: 0, paddingLeft: 18, color: "#232942", fontSize: 10, lineHeight: 1.4 }}>
-            {earlierCareer.map((item, idx) => (
-              <li key={`earlier-${idx}`} style={{ marginBottom: 6 }}>{sanitizeText(item)}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+  {experience.map((job) => (
+    <div key={`${job.company}-${job.period}`} className="pdf-block" style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 11, color: "#0f162c", fontWeight: 700 }}>{sanitizeText(job.company.toUpperCase())}</div>
+      <div style={{ fontSize: 10, color: "#d6b25e", marginBottom: 6 }}>{sanitizeText(job.period)}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6 }}>{sanitizeText(job.role)}</div>
+      <div style={{ fontSize: 10, marginBottom: 8 }}>{sanitizeText(job.summary)}</div>
+      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 10 }}>
+        {job.bullets.map((bullet, idx) => (
+          <li key={`${job.company}-${idx}`} style={{ marginBottom: 6 }}>
+            {sanitizeText(bullet)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+
+  <div className="pdf-block" style={{ marginBottom: 18 }}>
+    <PdfLabel text="Earlier Career" />
+    <ul style={{ margin: 0, paddingLeft: 18, fontSize: 10 }}>
+      {earlierCareer.map((item, idx) => (
+        <li key={`earlier-${idx}`} style={{ marginBottom: 6 }}>{sanitizeText(item)}</li>
+      ))}
+    </ul>
+  </div>
+</div>   
     </main>
   );
 }
