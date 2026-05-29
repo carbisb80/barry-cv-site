@@ -8,10 +8,10 @@ node_modules/
 out/
 dist/
 .turbo/
-*.meta
-*.sst
-current
-log
+**/*.meta
+**/*.sst
+**/current
+**/log
 
 # Production
 build/
