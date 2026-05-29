@@ -7,6 +7,11 @@ node_modules/
 .next/
 out/
 dist/
+.turbo/
+*.meta
+*.sst
+current
+log
 
 # Production
 build/
