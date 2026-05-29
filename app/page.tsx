@@ -71,8 +71,9 @@ const experience = [
     summary:
       "Owned quality strategy and built one of the organisation's strongest QA departments. Acted as Scrum Master and Agile coach, driving department-wide adoption of modern Agile practices.",
     bullets: [
+      "Built and coached a specialist test team, improving automation capability and delivery confidence across product streams.",
+      "Designed and launched an Automation Academy to give manual testers a structured path into automation and increase team capability.",
       "Introduced modern testing practices, CI/CD integration, and exploratory testing approaches.",
-      "Led department-wide Agile transformation as Scrum Master and Agile coach, implementing Scrum ceremonies and improving cross-team collaboration.",
       "Defined KPIs for quality metrics and achieved 24-hour to 2-hour regression reduction while increasing coverage.",
     ],
   },
