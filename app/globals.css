@@ -200,6 +200,35 @@ blockquote {
   line-height: 1.65;
 }
 
+.script-editor {
+  width: 100%;
+  min-height: 320px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95rem;
+  padding: 18px;
+  resize: vertical;
+  margin-top: 12px;
+}
+
+.script-preview pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  color: var(--text);
+}
+
+.script-preview {
+  margin-top: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+}
+
 .summary-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
