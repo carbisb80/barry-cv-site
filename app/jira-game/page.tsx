@@ -1,9 +1,3 @@
-// app/jira-game/page.tsx
-
-export const metadata = {
-  title: "Website updates",
-};
-
 export default function JiraGamePage() {
   return (
     <iframe
