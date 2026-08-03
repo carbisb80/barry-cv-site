@@ -168,6 +168,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 .status-message{min-height:1.2em;margin-top:8px;color:var(--gold);font-weight:700}
 @media(max-width:650px){.card{padding:14px;border-radius:20px}header{padding-top:26px}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-7HkHphCCnSjprbc8TH4K2GQgJw1oW1mXYhr5ZX2t5HSCl1reWtKm9+/cI2yLR+9SBX5/DzPWWMlX/s8VN/abxQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 <header>
@@ -207,7 +208,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 <div class="tablewrap" style="margin-top:14px"><table id="table"></table></div>
 </section>
 <section class="card"><div class="row"><button onclick="undo()">Undo Last Entry</button><button type="button" onclick="goHome()">Home</button><button id="newGameButton" class="danger" type="button" onclick="openNewGameModal()">New Game</button></div></section>
-<section id="final" class="card hidden"><h2>Final Result</h2><div id="result"></div></section>
+<section id="final" class="card hidden"><h2>Final Result</h2><div id="result"></div><button id="downloadFinalButton" class="primary hidden" type="button" onclick="downloadFinalScore()">Download Final Score PDF</button></section>
 </section>
 </main>
 
@@ -601,7 +602,8 @@ function complete(){return game.players.every(function(p){for(var r=0;r<13;r++)i
 function formatOwed(pence){
   return pence>=100?"£"+(pence/100).toFixed(2):pence+"p";
 }
-function renderFinal(){var c=document.getElementById("final");if(!complete()){c.classList.add("hidden");return}c.classList.remove("hidden");var ps=game.players.slice().sort(function(a,b){return total(a.id)-total(b.id)}),low=total(ps[0].id),wins=ps.filter(function(p){return total(p.id)===low}),h="";if(wins.length===1){var w=wins[0];h="<h3>"+esc(w.name)+" wins with "+low+" points</h3>";ps.filter(function(p){return p.id!==w.id}).forEach(function(p){h+='<div class="settle"><span>'+esc(p.name)+" owes "+esc(w.name)+"</span><strong>"+formatOwed(total(p.id)-low)+"</strong></div>"})}else h="<p>Tied lowest score — no single-winner payment shown.</p>";document.getElementById("result").innerHTML=h}
+function renderFinal(){var c=document.getElementById("final");var downloadButton=document.getElementById("downloadFinalButton");if(!complete()){c.classList.add("hidden");if(downloadButton)downloadButton.classList.add("hidden");return}c.classList.remove("hidden");if(downloadButton)downloadButton.classList.remove("hidden");var ps=game.players.slice().sort(function(a,b){return total(a.id)-total(b.id)}),low=total(ps[0].id),wins=ps.filter(function(p){return total(p.id)===low}),h="";if(wins.length===1){var w=wins[0];h="<h3>"+esc(w.name)+" wins with "+low+" points</h3>";ps.filter(function(p){return p.id!==w.id}).forEach(function(p){h+='<div class="settle"><span>'+esc(p.name)+" owes "+esc(w.name)+"</span><strong>"+formatOwed(total(p.id)-low)+"</strong></div>"})}else h="<p>Tied lowest score — no single-winner payment shown.</p>";document.getElementById("result").innerHTML=h}
+function downloadFinalScore(){if(!complete())return;var ps=game.players.slice().sort(function(a,b){return total(a.id)-total(b.id)});var low=total(ps[0].id);var title="Cabbage Final Score";var dateLabel=new Date().toLocaleString();var lines=[];lines.push(title);lines.push("Date: "+dateLabel);lines.push("");lines.push("Standings:");ps.forEach(function(p,i){lines.push((i+1)+". "+p.name+" - "+total(p.id)+" points")});lines.push("");var wins=ps.filter(function(p){return total(p.id)===low});if(wins.length===1){var w=wins[0];lines.push("Winner: "+w.name+" ("+low+" points)");lines.push("");lines.push("Settlements:");ps.filter(function(p){return p.id!==w.id}).forEach(function(p){lines.push(p.name+" owes "+w.name+" "+formatOwed(total(p.id)-low))})}else{lines.push("Tie for lowest score. No single-winner payment shown.");}var fileName='cabbage-final-score-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.pdf';if(window.jspdf && window.jspdf.jsPDF){try{var jsPDFConstructor=window.jspdf.jsPDF;var doc=new jsPDFConstructor({unit:'pt',format:'a4'});var x=40;var y=50;doc.setFontSize(18);doc.text(title,x,y);doc.setFontSize(11);doc.text(["Date: "+dateLabel,""],x,y+24);y+=48;doc.setFontSize(14);doc.text("Standings:",x,y);y+=18;doc.setFontSize(11);ps.forEach(function(p,i){doc.text((i+1)+". "+p.name+" - "+total(p.id)+" points",x,y);y+=16});y+=12;if(wins.length===1){var w=wins[0];doc.text("Winner: "+w.name+" ("+low+" points)",x,y);y+=20;doc.text("Settlements:",x,y);y+=18;ps.filter(function(p){return p.id!==w.id}).forEach(function(p){doc.text(p.name+" owes "+w.name+" "+formatOwed(total(p.id)-low),x,y);y+=16});} else {doc.text("Tie for lowest score. No single-winner payment shown.",x,y);}doc.save(fileName);return;}catch(e){console.warn('PDF generation failed, falling back to text.',e);} }var blob=new Blob([lines.join("\r\n")],{type:"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=fileName.replace(/\.pdf$/, '.txt');document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);} 
 function save(){localStorage.setItem("cabbageTableCurrent",JSON.stringify(game))}
 function load(){
   loadPreviousNames();
