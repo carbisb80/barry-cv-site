@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cabbage Scorekeeper</title>
+<style>
+:root{
+  --bg:#071525;--panel:#213956;--panel2:#172b43;--line:#4a607a;
+  --text:#f6f8fc;--muted:#b7c3d4;--gold:#ffd451;--gold2:#ffe995;--danger:#b94c5d;
+  --body-top:#0d2746;--field:#091a2d;--table:#08182766;--head:#294565;
+  --sticky:#203955;--foot:#162b44;--card-shadow:#0006
+}
+body.light{
+  --bg:#eef3f8;--panel:#ffffff;--panel2:#f7f9fc;--line:#c8d2df;
+  --text:#172234;--muted:#617086;--gold:#c99500;--gold2:#efd15a;--danger:#c85160;
+  --body-top:#dfe8f2;--field:#ffffff;--table:#ffffff;--head:#e7edf5;
+  --sticky:#f1f5f9;--foot:#e7edf5;--card-shadow:#76869b33
+}
+body.light button{
+  color:#1a2433;
+  background:linear-gradient(#f5f7fa,#dfe6ef);
+  border-color:#bcc8d6
+}
+body.light button.primary{
+  color:#172234;
+  background:linear-gradient(90deg,var(--gold2),#f7df7d)
+}
+body.light button.danger{
+  color:#fff;
+  background:linear-gradient(#d96774,#b44756)
+}
+body.light .modal{
+  box-shadow:0 28px 70px rgba(70,85,105,.28)
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 50% 0,#183c68 0,transparent 35%),linear-gradient(var(--body-top),var(--bg))}
+header{text-align:center;padding:34px 16px 18px}
+h1{margin:0;font-size:clamp(2rem,5vw,3rem)}
+header p,.muted{color:var(--muted)}
+main{width:min(1180px,calc(100% - 18px));margin:auto;padding-bottom:45px}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:24px;padding:18px;margin-bottom:16px;box-shadow:0 24px 60px var(--card-shadow)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+input,button{font:inherit}
+input[type=text]{flex:1;min-width:180px;height:48px;padding:0 14px;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:14px}
+button{min-height:46px;padding:0 16px;border-radius:14px;border:1px solid #71849b;color:#fff;font-weight:800;background:linear-gradient(#687e9a,#405673)}
+button.primary{color:#102038;background:linear-gradient(90deg,var(--gold),var(--gold2));border-color:#ffecad}
+button.danger{background:linear-gradient(#c55b6a,#883544)}
+button.eye{width:50px;padding:0;font-size:1.35rem}
+.hidden{display:none!important}
+.player{display:flex;align-items:center;gap:10px;padding:10px;margin-top:10px;border:1px solid #51657e;border-radius:13px;background:#ffffff0b}.player strong{flex:1}
+.tablewrap{overflow:auto;max-height:72vh;border:1px solid #51657e;border-radius:17px;-webkit-overflow-scrolling:touch}
+table{
+  width:100%;min-width:680px;border-collapse:separate;border-spacing:6px;
+  background:transparent
+}
+th,td{
+  height:58px;min-width:98px;padding:5px;text-align:center;
+  border:0
+}
+th{
+  position:sticky;top:0;z-index:10;background:var(--head);color:var(--muted);
+  font-size:.78rem;text-transform:uppercase;border-radius:12px
+}
+th:first-child,td:first-child{
+  position:sticky;left:0;z-index:2;min-width:92px;width:92px;
+  text-align:left;font-weight:800;background:var(--sticky)
+}
+th:first-child{z-index:11}
+tbody td:first-child{
+  border-radius:12px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 60%,transparent)
+}
+td.score{
+  cursor:pointer;font-weight:900;font-size:1.05rem;padding:0;position:relative;
+  overflow:hidden;border-radius:12px;
+  background:color-mix(in srgb,var(--panel2) 78%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 62%,transparent)
+}
+td.score:nth-child(even){
+  background:color-mix(in srgb,var(--panel) 78%,transparent)
+}
+tbody tr:nth-child(even) td.score{
+  background:color-mix(in srgb,var(--panel) 74%,transparent)
+}
+td.score:hover{
+  background:color-mix(in srgb,var(--gold) 12%,var(--panel2))
+}
+td.starter{
+  background:color-mix(in srgb,var(--gold) 18%,var(--panel2))!important;
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--gold) 75%,transparent)
+}
+td.starter::after{
+  content:"🂠";
+  position:absolute;
+  top:3px;
+  right:5px;
+  font-size:.9rem;
+  line-height:1;
+  color:var(--gold);
+  filter:drop-shadow(0 0 3px rgba(255,212,81,.35));
+}
+tfoot td{
+  position:sticky;bottom:0;z-index:8;background:var(--foot);font-weight:900;
+  overflow:hidden;border-radius:12px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 70%,transparent),0 -3px 8px rgba(0,0,0,.18)
+}
+tfoot td:first-child{z-index:9;color:var(--gold)}
+.total-hidden{color:var(--muted);letter-spacing:.14em}
+.total-visible{color:var(--gold);font-size:1.15rem}
+.winner-total{background:#ffd45120!important;color:var(--gold)!important;box-shadow:inset 0 0 0 2px var(--gold)}
+
+/* Large cell-filling marks */
+.mark{
+  position:absolute;
+  inset:6px;
+  display:block;
+  border:1px solid rgba(219,231,245,.28);
+  border-radius:7px;
+}
+.mark.cabbage:after,
+.mark.full:before,
+.mark.full:after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:calc(100% - 8px);
+  background:var(--gold);
+  border-radius:999px;
+  transform-origin:center;
+  box-shadow:0 0 8px rgba(255,212,81,.25);
+}
+.mark.cabbage:after{transform:translate(-50%,-50%) rotate(45deg)}
+.mark.full:before{transform:translate(-50%,-50%) rotate(45deg)}
+.mark.full:after{transform:translate(-50%,-50%) rotate(-45deg)}
+
+.modalback{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;padding:12px;background:#000b}
+.modal{width:min(450px,100%);padding:18px;border:1px solid #637891;border-radius:24px 24px 17px 17px;background:linear-gradient(180deg,var(--panel),var(--panel2));box-shadow:0 28px 80px #000a}
+.modal h3{margin:0}
+.display{height:68px;margin:14px 0;display:flex;align-items:center;justify-content:flex-end;padding:0 18px;border-radius:14px;background:var(--field);border:1px solid var(--line);font-size:2rem;font-weight:900}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.keypad button{min-height:57px;font-size:1.2rem}
+.special,.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.special button,.actions button{min-height:55px}
+.settle{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #ffffff1c}.settle:last-child{border-bottom:0}
+.logo-badge{
+  width:72px;height:72px;margin:0 auto 12px;display:grid;place-items:center;
+  border-radius:22px;font-size:2.1rem;
+  background:linear-gradient(145deg,var(--gold),var(--gold2));
+  color:#102038;box-shadow:0 14px 32px rgba(255,212,81,.22)
+}
+.setup-actions{display:grid;gap:10px;margin-top:18px}
+.setup-actions .primary{min-height:56px;font-size:1.05rem}
+@media(max-width:650px){.card{padding:14px;border-radius:20px}header{padding-top:26px}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo-badge">🥬</div>
+<h1>Cabbage Scorekeeper</h1>
+<p>Tap any score cell to enter the result.</p>
+</header>
+<main>
+<section id="setup" class="card">
+<h2>Players</h2>
+<div class="row"><input id="name" type="text" placeholder="Player name"><button class="primary" onclick="addPlayer()">Add Player</button></div>
+<div id="players"></div>
+
+<div style="margin-top:18px">
+  <strong>Appearance</strong>
+  <div class="row" style="margin-top:10px">
+    <button id="darkThemeBtn" type="button" class="primary" onclick="setTheme('dark')">Dark</button>
+    <button id="lightThemeBtn" type="button" onclick="setTheme('light')">Light</button>
+  </div>
+</div>
+
+<p id="error" style="color:#ff9baa;font-weight:800"></p>
+<div class="setup-actions">
+  <button class="primary" onclick="startGame()">Start Game</button>
+  <button id="resumeButton" class="hidden" onclick="resumeGame()">Resume Saved Game</button>
+</div>
+</section>
+
+<section id="game" class="hidden">
+<section class="card">
+<div class="row between">
+<div><h2 style="margin:0">Score Table</h2><div class="muted">Gold card marker shows who receives the first of the 8 cards.</div></div>
+</div>
+<div class="tablewrap" style="margin-top:14px"><table id="table"></table></div>
+</section>
+<section class="card"><div class="row"><button onclick="undo()">Undo Last Entry</button><button id="newGameButton" class="danger" type="button" onclick="openNewGameModal()">New Game</button></div></section>
+<section id="final" class="card hidden"><h2>Final Result</h2><div id="result"></div></section>
+</section>
+</main>
+
+<div id="back" class="modalback hidden">
+<div class="modal">
+<h3 id="mtitle">Enter score</h3><div id="msub" class="muted"></div>
+<div id="display" class="display">0</div>
+<div class="keypad">
+<button onclick="digit('1')">1</button><button onclick="digit('2')">2</button><button onclick="digit('3')">3</button>
+<button onclick="digit('4')">4</button><button onclick="digit('5')">5</button><button onclick="digit('6')">6</button>
+<button onclick="digit('7')">7</button><button onclick="digit('8')">8</button><button onclick="digit('9')">9</button>
+<button onclick="clearNum()">Clear</button><button onclick="digit('0')">0</button><button onclick="backspace()">⌫</button>
+</div>
+<div class="special"><button onclick="special('cabbage')">Cabbage ／</button><button class="primary" onclick="special('full')">Full Run ✕</button></div>
+<div class="actions"><button onclick="closeModal()">Cancel</button><button class="primary" onclick="saveScore()">Save Score</button></div>
+</div>
+</div>
+
+<div id="newGameBack" class="modalback hidden">
+  <div class="modal">
+    <h3>Start a New Game?</h3>
+    <div class="muted" style="margin-top:6px">
+      Choose whether to keep the current players or return to the opening screen.
+    </div>
+
+    <button class="primary" type="button" style="width:100%;margin-top:18px;min-height:55px"
+      onclick="newGameSamePlayers()">Same Players</button>
+
+    <button type="button" style="width:100%;margin-top:10px;min-height:55px"
+      onclick="newGameNewPlayers()">New Players</button>
+
+    <button type="button" style="width:100%;margin-top:10px"
+      onclick="closeNewGameModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+var rounds=["Ace","2","3","4","5","6","7","8","9","10","Jack","Queen","King"];
+var game={players:[],entries:{},history:[],started:false,showTotals:false,theme:"dark",startPlayer:0};
+var modal={playerId:null,round:null,value:"0"};
+function id(){return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function esc(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function applyTheme(){
+  document.body.classList.toggle("light",game.theme==="light");
+  var dark=document.getElementById("darkThemeBtn");
+  var light=document.getElementById("lightThemeBtn");
+  if(dark&&light){
+    dark.classList.toggle("primary",game.theme==="dark");
+    light.classList.toggle("primary",game.theme==="light");
+  }
+}
+function setTheme(theme){
+  game.theme=theme;
+  applyTheme();
+  save();
+}
+function addPlayer(){var i=document.getElementById("name"),n=i.value.trim(),e=document.getElementById("error");e.textContent="";if(!n){e.textContent="Enter a player name.";return}if(game.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){e.textContent="That player already exists.";return}game.players.push({id:id(),name:n});i.value="";renderPlayers()}
+function removePlayer(pid){game.players=game.players.filter(function(p){return p.id!==pid});renderPlayers()}
+function renderPlayers(){
+  document.getElementById("players").innerHTML=game.players.map(function(p){
+    return '<div class="player"><strong>'+esc(p.name)+
+      '</strong><button class="danger" onclick="removePlayer(\''+p.id+'\')">Remove</button></div>';
+  }).join("");
+  updateResumeButton();
+}
+function updateResumeButton(){
+  var button=document.getElementById("resumeButton");
+  if(!button)return;
+  var saved=null;
+  try{saved=localStorage.getItem("cabbageTableCurrent")}catch(e){}
+  button.classList.toggle("hidden",!saved||game.started);
+}
+function resumeGame(){
+  var saved=null;
+  try{saved=localStorage.getItem("cabbageTableCurrent")}catch(e){}
+  if(!saved)return;
+  try{
+    game=JSON.parse(saved);
+    if(!game.theme)game.theme="dark";
+    applyTheme();
+    showGame();
+  }catch(e){
+    document.getElementById("error").textContent="The saved game could not be opened.";
+  }
+}
+function chooseRandomStarter(){
+  game.startPlayer=Math.floor(Math.random()*game.players.length);
+}
+function startGame(){
+  if(game.players.length<2){
+    document.getElementById("error").textContent="Add at least two players.";
+    return;
+  }
+  chooseRandomStarter();
+  game.started=true;
+  save();
+  showGame();
+}
+function showGame(){document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");renderTable();renderFinal()}
+function k(pid,r){return pid+"|"+r}
+function entry(pid,r){return game.entries[k(pid,r)]||null}
+function total(pid){var t=0;for(var r=0;r<13;r++){var x=entry(pid,r);if(!x)continue;if(x.type==="full")t=0;else if(x.type==="score")t+=x.value}return t}
+function renderTable(){
+  var ps=game.players,h="<thead><tr><th>Wildcard</th>";
+  ps.forEach(function(p){h+="<th>"+esc(p.name)+"</th>"});h+="</tr></thead><tbody>";
+  rounds.forEach(function(r,ri){
+    h+="<tr><td>"+r+"</td>";
+    ps.forEach(function(p,pi){
+      var x=entry(p.id,ri),c="",starter=(pi===((game.startPlayer+ri)%ps.length))?" starter":"";
+      if(x){if(x.type==="score")c=x.value;if(x.type==="cabbage")c='<span class="mark cabbage"></span>';if(x.type==="full")c='<span class="mark full"></span>'}
+      h+='<td class="score'+starter+'" onclick="openModal(\''+p.id+'\','+ri+')">'+c+"</td>";
+    });
+    h+="</tr>";
+  });
+  h+='</tbody><tfoot><tr><td><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span>TOTAL</span><button id="eye" class="eye" type="button" title="Hold to show totals">👁</button></div></td>';
+  var complete=game.players.length&&game.players.every(function(p){for(var r=0;r<13;r++)if(!entry(p.id,r))return false;return true});
+  if(complete) game.showTotals=true;
+  var low=complete?Math.min.apply(null,ps.map(function(p){return total(p.id)})):null;
+  ps.forEach(function(p){
+    var cls=complete&&total(p.id)===low?" winner-total":"";
+    h+='<td class="'+cls+'">'+(game.showTotals?'<span class="total-visible">'+total(p.id)+'</span>':'<span class="total-hidden">•••</span>')+"</td>";
+  });
+  h+="</tr></tfoot>";
+  document.getElementById("table").innerHTML=h;
+  bindEye();
+}
+function openModal(pid,r){var p=game.players.find(function(x){return x.id===pid}),x=entry(pid,r);modal.playerId=pid;modal.round=r;modal.value=x&&x.type==="score"?String(x.value):"0";document.getElementById("mtitle").textContent=p.name+" — Round "+(r+1);document.getElementById("msub").textContent=rounds[r]+"s are wild";showDisplay();document.getElementById("back").classList.remove("hidden")}
+function closeModal(){document.getElementById("back").classList.add("hidden")}
+function showDisplay(){document.getElementById("display").textContent=modal.value}
+function digit(n){modal.value=modal.value==="0"?n:(modal.value.length<4?modal.value+n:modal.value);showDisplay()}
+function clearNum(){modal.value="0";showDisplay()}
+function backspace(){modal.value=modal.value.slice(0,-1)||"0";showDisplay()}
+function commit(x){var key=k(modal.playerId,modal.round);game.history.push({key:key,previous:game.entries[key]||null});game.entries[key]=x;save();closeModal();renderTable();renderFinal()}
+function saveScore(){commit({type:"score",value:Number(modal.value)})}
+function special(t){commit({type:t,value:0})}
+function undo(){var x=game.history.pop();if(!x){alert("Nothing to undo.");return}if(x.previous)game.entries[x.key]=x.previous;else delete game.entries[x.key];save();renderTable();renderFinal()}
+function bindEye(){var b=document.getElementById("eye");if(!b||b.dataset.bound)return;b.dataset.bound="1";var timer;function show(){clearTimeout(timer);game.showTotals=true;renderTable()}function hide(){clearTimeout(timer);timer=setTimeout(function(){game.showTotals=false;renderTable()},800)}b.addEventListener("mousedown",show);b.addEventListener("mouseup",hide);b.addEventListener("mouseleave",hide);b.addEventListener("touchstart",function(e){e.preventDefault();show()},{passive:false});b.addEventListener("touchend",function(e){e.preventDefault();hide()},{passive:false});b.addEventListener("click",function(){show();hide()})}
+function complete(){return game.players.every(function(p){for(var r=0;r<13;r++)if(!entry(p.id,r))return false;return true})}
+function formatOwed(pence){
+  return pence>=100?"£"+(pence/100).toFixed(2):pence+"p";
+}
+function renderFinal(){var c=document.getElementById("final");if(!complete()){c.classList.add("hidden");return}c.classList.remove("hidden");var ps=game.players.slice().sort(function(a,b){return total(a.id)-total(b.id)}),low=total(ps[0].id),wins=ps.filter(function(p){return total(p.id)===low}),h="";if(wins.length===1){var w=wins[0];h="<h3>"+esc(w.name)+" wins with "+low+" points</h3>";ps.filter(function(p){return p.id!==w.id}).forEach(function(p){h+='<div class="settle"><span>'+esc(p.name)+" owes "+esc(w.name)+"</span><strong>"+formatOwed(total(p.id)-low)+"</strong></div>"})}else h="<p>Tied lowest score — no single-winner payment shown.</p>";document.getElementById("result").innerHTML=h}
+function save(){localStorage.setItem("cabbageTableCurrent",JSON.stringify(game))}
+function load(){
+  var s=localStorage.getItem("cabbageTableCurrent");
+  if(!s){applyTheme();updateResumeButton();return}
+  try{
+    var savedGame=JSON.parse(s);
+    if(savedGame.started){
+      game={players:[],entries:{},history:[],started:false,showTotals:false,theme:savedGame.theme||"dark"};
+      applyTheme();
+      updateResumeButton();
+    }else{
+      game=savedGame;
+      if(!game.theme)game.theme="dark";
+      applyTheme();
+      renderPlayers();
+    }
+  }catch(e){
+    applyTheme();
+    updateResumeButton();
+  }
+}
+function openNewGameModal(){
+  document.getElementById("newGameBack").classList.remove("hidden");
+}
+
+function closeNewGameModal(){
+  document.getElementById("newGameBack").classList.add("hidden");
+}
+
+function clearSavedGames(){
+  try{
+    localStorage.removeItem("cabbageTableCurrent");
+    localStorage.removeItem("cabbageTableV8");
+    localStorage.removeItem("cabbageTableV9");
+    localStorage.removeItem("cabbageTableV10");
+    localStorage.removeItem("cabbageTableV11");
+    localStorage.removeItem("cabbageTableV12");
+  }catch(error){
+    console.warn("Saved game could not be removed.",error);
+  }
+}
+
+function newGameSamePlayers(){
+  clearSavedGames();
+
+  game.entries={};
+  game.history=[];
+  game.started=true;
+  game.showTotals=false;
+  chooseRandomStarter();
+
+  closeNewGameModal();
+  save();
+  renderTable();
+  renderFinal();
+}
+
+function newGameNewPlayers(){
+  var currentTheme=game.theme||"dark";
+  clearSavedGames();
+
+  game={
+    players:[],
+    entries:{},
+    history:[],
+    started:false,
+    showTotals:false,
+    theme:currentTheme,
+    startPlayer:0
+  };
+
+  modal={playerId:null,round:null,value:"0"};
+
+  closeNewGameModal();
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("setup").classList.remove("hidden");
+  document.getElementById("final").classList.add("hidden");
+  document.getElementById("back").classList.add("hidden");
+  document.getElementById("name").value="";
+  document.getElementById("error").textContent="";
+  document.getElementById("players").innerHTML="";
+  document.getElementById("table").innerHTML="";
+  document.getElementById("result").innerHTML="";
+
+  renderPlayers();
+  applyTheme();
+  updateResumeButton();
+}
+document.getElementById("name").addEventListener("keydown",function(e){if(e.key==="Enter")addPlayer()});
+document.getElementById("back").addEventListener("click",function(e){
+  if(e.target===this){
+    saveScore();
+  }
+});
+document.getElementById("newGameBack").addEventListener("click",function(e){if(e.target===this)closeNewGameModal()});
+load();applyTheme();renderPlayers();
+</script>
+</body>
+</html>
