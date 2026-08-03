@@ -539,7 +539,9 @@ function downloadBlankScoreSheetPDF(){
       doc.rect(x, y, colWidth, headerHeight, 'F');
       var name = game.players[pi].name;
       var lines = doc.splitTextToSize(name, colWidth - 12);
-      doc.text(lines, x + colWidth / 2, y + 18, { align: 'center' });
+      doc.setTextColor(20, 20, 20);
+      var textY = y + headerHeight / 2 + (lines.length - 1) * 4;
+      doc.text(lines, x + colWidth / 2, textY, { align: 'center' });
     }
     for(var col=0; col<columns; col++){
       doc.rect(margin + colWidth * col, y, colWidth, headerHeight, 'S');
