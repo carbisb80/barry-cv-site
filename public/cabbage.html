@@ -163,7 +163,8 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 <main>
 <section id="setup" class="card">
 <h2>Players</h2>
-<div class="row"><input id="name" type="text" placeholder="Player name"><button class="primary" onclick="addPlayer()">Add Player</button></div>
+<div class="row"><input id="name" list="previousNames" type="text" placeholder="Player name"><button class="primary" onclick="addPlayer()">Add Player</button></div>
+<datalist id="previousNames"></datalist>
 <div id="players"></div>
 
 <div style="margin-top:18px">
@@ -246,7 +247,40 @@ function setTheme(theme){
   applyTheme();
   save();
 }
-function addPlayer(){var i=document.getElementById("name"),n=i.value.trim(),e=document.getElementById("error");e.textContent="";if(!n){e.textContent="Enter a player name.";return}if(game.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){e.textContent="That player already exists.";return}game.players.push({id:id(),name:n});i.value="";renderPlayers()}
+function getPreviousNameKey(){
+  return "cabbagePreviousNames";
+}
+function loadPreviousNames(){
+  var stored=null;
+  try{stored=localStorage.getItem(getPreviousNameKey())}catch(e){}
+  var list=[];
+  if(stored){
+    try{list=JSON.parse(stored)||[]}catch(e){list=[];}
+  }
+  var data=document.getElementById("previousNames");
+  if(!data) return;
+  data.innerHTML=list.map(function(name){
+    return '<option value="'+esc(name)+'"></option>';
+  }).join("");
+}
+function savePreviousName(name){
+  if(!name) return;
+  var key=getPreviousNameKey();
+  var stored=null;
+  try{stored=localStorage.getItem(key)}catch(e){}
+  var list=[];
+  if(stored){
+    try{list=JSON.parse(stored)||[]}catch(e){list=[];}
+  }
+  name=name.trim();
+  if(!name) return;
+  if(list.some(function(n){return n.toLowerCase()===name.toLowerCase()})) return;
+  list.unshift(name);
+  if(list.length>20) list.length=20;
+  try{localStorage.setItem(key,JSON.stringify(list))}catch(e){}
+  loadPreviousNames();
+}
+function addPlayer(){var i=document.getElementById("name"),n=i.value.trim(),e=document.getElementById("error");e.textContent="";if(!n){e.textContent="Enter a player name.";return}if(game.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){e.textContent="That player already exists.";return}game.players.push({id:id(),name:n});savePreviousName(n);i.value="";renderPlayers()}
 function removePlayer(pid){game.players=game.players.filter(function(p){return p.id!==pid});renderPlayers()}
 function renderPlayers(){
   document.getElementById("players").innerHTML=game.players.map(function(p){
@@ -334,6 +368,7 @@ function formatOwed(pence){
 function renderFinal(){var c=document.getElementById("final");if(!complete()){c.classList.add("hidden");return}c.classList.remove("hidden");var ps=game.players.slice().sort(function(a,b){return total(a.id)-total(b.id)}),low=total(ps[0].id),wins=ps.filter(function(p){return total(p.id)===low}),h="";if(wins.length===1){var w=wins[0];h="<h3>"+esc(w.name)+" wins with "+low+" points</h3>";ps.filter(function(p){return p.id!==w.id}).forEach(function(p){h+='<div class="settle"><span>'+esc(p.name)+" owes "+esc(w.name)+"</span><strong>"+formatOwed(total(p.id)-low)+"</strong></div>"})}else h="<p>Tied lowest score — no single-winner payment shown.</p>";document.getElementById("result").innerHTML=h}
 function save(){localStorage.setItem("cabbageTableCurrent",JSON.stringify(game))}
 function load(){
+  loadPreviousNames();
   var s=localStorage.getItem("cabbageTableCurrent");
   if(!s){applyTheme();updateResumeButton();return}
   try{
