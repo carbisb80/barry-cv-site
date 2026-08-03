@@ -311,15 +311,35 @@ function renderSavedGames(){
   if(!container) return;
   var stored=null;
   try{stored=localStorage.getItem("cabbageTableCurrent")}catch(e){}
-  if(!stored){container.innerHTML="";return;}
+  container.innerHTML = "";
+  if(!stored) return;
   try{
     var saved=JSON.parse(stored);
-    if(!saved||!saved.startedAt){container.innerHTML="";return;}
-    var label=saved.startedAt?new Date(saved.startedAt).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}):"Saved game";
-    container.innerHTML='<div class="saved-game-item"><div class="saved-game-meta"><strong>Saved game</strong><span>'+esc(label)+'</span></div><button id="savedLoadBtn" class="primary" type="button">Load</button></div>';
-    // attach event listener to avoid inline onclick quirks on some browsers
-    try{var btn=document.getElementById('savedLoadBtn'); if(btn){btn.addEventListener('click', resumeGame);}}catch(e){}
-  }catch(e){container.innerHTML="";}
+    if(!saved||!saved.startedAt) return;
+    var label = saved.startedAt ? new Date(saved.startedAt).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "Saved game";
+    var item = document.createElement('div');
+    item.className = 'saved-game-item';
+
+    var meta = document.createElement('div');
+    meta.className = 'saved-game-meta';
+    var title = document.createElement('strong'); title.textContent = 'Saved game';
+    var span = document.createElement('span'); span.textContent = label;
+    meta.appendChild(title); meta.appendChild(span);
+
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'primary'; btn.textContent = 'Load';
+    btn.addEventListener('click', function(){
+      console.debug && console.debug('cabbage: saved load button clicked');
+      resumeGame();
+    });
+
+    item.appendChild(meta);
+    item.appendChild(btn);
+    container.appendChild(item);
+  }catch(e){
+    container.innerHTML = "";
+    console.error(e);
+  }
 }
 function usePreviousName(name){
   var input=document.getElementById("name");
@@ -575,6 +595,32 @@ function newGameNewPlayers(){
   applyTheme();
   updateResumeButton();
 }
+// Allow hardware keyboard numeric entry when the modal is open
+document.addEventListener('keydown', function(e){
+  var backEl = document.getElementById('back');
+  if(!backEl || backEl.classList.contains('hidden')) return;
+  if(e.key >= '0' && e.key <= '9'){
+    digit(e.key);
+    e.preventDefault();
+    return;
+  }
+  if(e.key === 'Enter'){
+    saveScore();
+    e.preventDefault();
+    return;
+  }
+  if(e.key === 'Backspace'){
+    backspace();
+    e.preventDefault();
+    return;
+  }
+  if(e.key === 'Escape'){
+    closeModal();
+    e.preventDefault();
+    return;
+  }
+});
+
 document.getElementById("name").addEventListener("keydown",function(e){if(e.key==="Enter")addPlayer()});
 document.getElementById("back").addEventListener("click",function(e){
   if(e.target===this){
