@@ -159,6 +159,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 .recent-names{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .recent-name-chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--field);color:var(--text);font-size:.95rem;min-height:auto}
 .recent-name-chip:hover{border-color:var(--gold)}
+.recent-name-remove{margin-left:8px;background:transparent;border:0;color:var(--muted);font-weight:700;border-radius:6px;padding:2px 6px}
 .saved-games{display:grid;gap:8px;margin-top:12px}
 .saved-game-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--text)}
 .saved-game-item button{min-height:auto;padding:8px 10px;font-size:.9rem}
@@ -204,7 +205,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 </div>
 <div class="tablewrap" style="margin-top:14px"><table id="table"></table></div>
 </section>
-<section class="card"><div class="row"><button onclick="undo()">Undo Last Entry</button><button id="saveButton" class="hidden" type="button" onclick="saveGame()">Save Game</button><button id="newGameButton" class="danger" type="button" onclick="openNewGameModal()">New Game</button></div></section>
+<section class="card"><div class="row"><button onclick="undo()">Undo Last Entry</button><button id="newGameButton" class="danger" type="button" onclick="openNewGameModal()">New Game</button></div></section>
 <section id="final" class="card hidden"><h2>Final Result</h2><div id="result"></div></section>
 </section>
 </main>
@@ -298,13 +299,36 @@ function loadPreviousNames(){
   container.innerHTML="";
   if(!list.length) return;
   list.forEach(function(name){
+    var wrap=document.createElement('div');
+    wrap.style.display='inline-flex'; wrap.style.alignItems='center'; wrap.style.gap='6px';
+
     var chip=document.createElement("button");
     chip.type="button";
     chip.className="recent-name-chip";
     chip.textContent=name;
     chip.addEventListener("click", function(){usePreviousName(name)});
-    container.appendChild(chip);
+
+    var clearBtn=document.createElement('button');
+    clearBtn.type='button'; clearBtn.className='recent-name-remove'; clearBtn.textContent='×';
+    clearBtn.title='Remove from recent names';
+    clearBtn.addEventListener('click', function(e){ e.stopPropagation(); removePreviousName(name); });
+
+    wrap.appendChild(chip);
+    wrap.appendChild(clearBtn);
+    container.appendChild(wrap);
   });
+}
+
+function removePreviousName(name){
+  if(!name) return;
+  var key=getPreviousNameKey();
+  try{
+    var stored=localStorage.getItem(key);
+    var list=stored?JSON.parse(stored)||[]:[];
+    var filtered=list.filter(function(n){return n!==name});
+    localStorage.setItem(key,JSON.stringify(filtered));
+  }catch(e){console.warn('Could not remove previous name',e)}
+  loadPreviousNames();
 }
 function renderSavedGames(){
   var container=document.getElementById("savedGames");
@@ -380,24 +404,10 @@ function updateSaveButton(){
   button.classList.toggle("hidden", !game.started || game.players.length===0);
 }
 function saveGame(){
-  var error=document.getElementById("error");
-  if(!game.started){
-    if(error) error.textContent="Start a game before saving.";
-    return;
-  }
-  if(game.players.length===0){
-    if(error) error.textContent="Add at least one player before saving.";
-    return;
-  }
-  if(!game.startedAt) game.startedAt=new Date().toISOString();
-  game.started=true;
-  save();
-  console.debug && console.debug('cabbage: saved at', game.startedAt);
-  updateResumeButton();
-  updateSaveButton();
-  renderSavedGames();
-  setStatus("Saved successfully.");
-  if(error) error.textContent="";
+  // Saving is intentionally disabled.
+  setStatus("Saving disabled.");
+  console.debug && console.debug('cabbage: save attempted but disabled');
+  var error=document.getElementById("error"); if(error) error.textContent="";
   setTimeout(clearStatus, 2200);
 }
 function updateResumeButton(){
