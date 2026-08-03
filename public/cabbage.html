@@ -156,6 +156,9 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 }
 .setup-actions{display:grid;gap:10px;margin-top:18px}
 .setup-actions .primary{min-height:56px;font-size:1.05rem}
+.recent-names{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.recent-name-chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--field);color:var(--text);font-size:.95rem;min-height:auto}
+.recent-name-chip:hover{border-color:var(--gold)}
 @media(max-width:650px){.card{padding:14px;border-radius:20px}header{padding-top:26px}}
 </style>
 </head>
@@ -168,8 +171,8 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 <main>
 <section id="setup" class="card">
 <h2>Players</h2>
-<div class="row"><input id="name" list="previousNames" type="text" placeholder="Player name"><button class="primary" onclick="addPlayer()">Add Player</button></div>
-<datalist id="previousNames"></datalist>
+<div class="row"><input id="name" type="text" placeholder="Player name"><button class="primary" onclick="addPlayer()">Add Player</button></div>
+<div id="recentNames" class="recent-names"></div>
 <div id="players"></div>
 
 <div style="margin-top:18px">
@@ -263,11 +266,24 @@ function loadPreviousNames(){
   if(stored){
     try{list=JSON.parse(stored)||[]}catch(e){list=[];}
   }
-  var data=document.getElementById("previousNames");
-  if(!data) return;
-  data.innerHTML=list.map(function(name){
-    return '<option value="'+esc(name)+'"></option>';
-  }).join("");
+  var container=document.getElementById("recentNames");
+  if(!container) return;
+  container.innerHTML="";
+  if(!list.length) return;
+  list.forEach(function(name){
+    var chip=document.createElement("button");
+    chip.type="button";
+    chip.className="recent-name-chip";
+    chip.textContent=name;
+    chip.addEventListener("click", function(){usePreviousName(name)});
+    container.appendChild(chip);
+  });
+}
+function usePreviousName(name){
+  var input=document.getElementById("name");
+  if(!input) return;
+  input.value=name;
+  input.focus();
 }
 function savePreviousName(name){
   if(!name) return;
