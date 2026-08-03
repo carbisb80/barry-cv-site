@@ -447,8 +447,22 @@ function savePreviousName(name){
   try{localStorage.setItem(key,JSON.stringify(list))}catch(e){}
   loadPreviousNames();
 }
-function addPlayer(){var i=document.getElementById("name"),n=i.value.trim(),e=document.getElementById("error");e.textContent="";if(!n){e.textContent="Enter a player name.";return}if(game.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){e.textContent="That player already exists.";return}game.players.push({id:id(),name:n});savePreviousName(n);i.value="";renderPlayers()}
-function removePlayer(pid){game.players=game.players.filter(function(p){return p.id!==pid});renderPlayers()}
+function resetGameForRosterChange(){
+  clearSavedGames();
+  game.entries={};
+  game.history=[];
+  game.started=false;
+  game.showTotals=false;
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+  document.getElementById('final').classList.add('hidden');
+  document.getElementById('table').innerHTML='';
+  document.getElementById('result').innerHTML='';
+  updateResumeButton();
+  updateGameScreenButton();
+}
+function addPlayer(){var i=document.getElementById("name"),n=i.value.trim(),e=document.getElementById("error");e.textContent="";if(!n){e.textContent="Enter a player name.";return}if(game.players.some(function(p){return p.name.toLowerCase()===n.toLowerCase()})){e.textContent="That player already exists.";return}game.players.push({id:id(),name:n});savePreviousName(n);i.value="";resetGameForRosterChange();renderPlayers()}
+function removePlayer(pid){game.players=game.players.filter(function(p){return p.id!==pid});resetGameForRosterChange();renderPlayers()}
 function renderPlayers(){
   document.getElementById("players").innerHTML=game.players.map(function(p){
     return '<div class="player"><strong>'+esc(p.name)+
