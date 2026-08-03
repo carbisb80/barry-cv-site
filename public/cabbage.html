@@ -178,6 +178,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 <p id="error" style="color:#ff9baa;font-weight:800"></p>
 <div class="setup-actions">
   <button class="primary" onclick="startGame()">Start Game</button>
+  <button id="saveButton" class="hidden" onclick="saveGame()">Save Game</button>
   <button id="resumeButton" class="hidden" onclick="resumeGame()">Resume Saved Game</button>
 </div>
 </section>
@@ -229,7 +230,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 
 <script>
 var rounds=["Ace","2","3","4","5","6","7","8","9","10","Jack","Queen","King"];
-var game={players:[],entries:{},history:[],started:false,showTotals:false,theme:"dark",startPlayer:0};
+var game={players:[],entries:{},history:[],started:false,showTotals:false,theme:"light",startPlayer:0};
 var modal={playerId:null,round:null,value:"0"};
 function id(){return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function esc(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
@@ -288,6 +289,26 @@ function renderPlayers(){
       '</strong><button class="danger" onclick="removePlayer(\''+p.id+'\')">Remove</button></div>';
   }).join("");
   updateResumeButton();
+  updateSaveButton();
+}
+function updateSaveButton(){
+  var button=document.getElementById("saveButton");
+  if(!button) return;
+  button.classList.toggle("hidden", game.players.length===0);
+}
+function saveGame(){
+  var error=document.getElementById("error");
+  if(game.players.length===0){
+    if(error) error.textContent="Add at least one player before saving.";
+    return;
+  }
+  save();
+  updateResumeButton();
+  updateSaveButton();
+  if(error){
+    error.textContent="Game saved.";
+    setTimeout(function(){if(error.textContent==="Game saved.") error.textContent="";}, 2000);
+  }
 }
 function updateResumeButton(){
   var button=document.getElementById("resumeButton");
@@ -382,6 +403,7 @@ function load(){
       if(!game.theme)game.theme="dark";
       applyTheme();
       renderPlayers();
+      updateSaveButton();
     }
   }catch(e){
     applyTheme();
