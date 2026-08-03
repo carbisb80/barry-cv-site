@@ -191,9 +191,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 </div>
 
 <p id="error" style="color:#ff9baa;font-weight:800"></p>
-<div id="savedGameIndicator" class="status-message" style="display:none"></div>
 <div id="statusMessage" class="status-message"></div>
-<div id="savedGames" class="saved-games"></div>
 <div class="setup-actions">
   <button class="primary" onclick="startGame()">Start Game</button>
   <button id="resumeButton" class="hidden" onclick="resumeGame()">Resume Saved Game</button>
@@ -291,7 +289,11 @@ function goToGameScreen(){
   }
 }
 function goHome(){
-  window.location.href = '/';
+  // Return to the setup screen, preserving the current game state.
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+  updateResumeButton();
+  renderPlayers();
 }
 function getPreviousNameKey(){
   return "cabbagePreviousNames";
@@ -374,25 +376,6 @@ function removePreviousName(name){
     localStorage.setItem(key,JSON.stringify(filtered));
   }catch(e){console.warn('Could not remove previous name',e)}
   loadPreviousNames();
-}
-function updateSavedGameIndicator(){
-  var indicator=document.getElementById('savedGameIndicator');
-  if(!indicator) return;
-  var saved=null;
-  try{saved=localStorage.getItem('cabbageTableCurrent')}catch(e){}
-  if(saved){
-    try{
-      var parsed=JSON.parse(saved);
-      if(parsed&&parsed.startedAt){
-        indicator.textContent='Saved Game';
-        indicator.style.display='block';
-      } else {
-        indicator.style.display='none';
-      }
-    }catch(e){indicator.style.display='none';}
-  } else {
-    indicator.style.display='none';
-  }
 }
 function renderSavedGames(){
   var container=document.getElementById("savedGames");
@@ -583,7 +566,6 @@ function save(){localStorage.setItem("cabbageTableCurrent",JSON.stringify(game))
 function load(){
   loadPreviousNames();
   renderSavedGames();
-  updateSavedGameIndicator();
   var s=localStorage.getItem("cabbageTableCurrent");
   if(!s){applyTheme();updateResumeButton();return}
   try{
