@@ -186,7 +186,6 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 <p id="error" style="color:#ff9baa;font-weight:800"></p>
 <div class="setup-actions">
   <button class="primary" onclick="startGame()">Start Game</button>
-  <button id="saveButton" class="hidden" onclick="saveGame()">Save Game</button>
   <button id="resumeButton" class="hidden" onclick="resumeGame()">Resume Saved Game</button>
 </div>
 </section>
@@ -198,7 +197,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 </div>
 <div class="tablewrap" style="margin-top:14px"><table id="table"></table></div>
 </section>
-<section class="card"><div class="row"><button onclick="undo()">Undo Last Entry</button><button id="newGameButton" class="danger" type="button" onclick="openNewGameModal()">New Game</button></div></section>
+<section class="card"><div class="row"><button onclick="undo()">Undo Last Entry</button><button id="saveButton" class="hidden" type="button" onclick="saveGame()">Save Game</button><button id="newGameButton" class="danger" type="button" onclick="openNewGameModal()">New Game</button></div></section>
 <section id="final" class="card hidden"><h2>Final Result</h2><div id="result"></div></section>
 </section>
 </main>
@@ -315,14 +314,20 @@ function renderPlayers(){
 function updateSaveButton(){
   var button=document.getElementById("saveButton");
   if(!button) return;
-  button.classList.toggle("hidden", game.players.length===0);
+  button.classList.toggle("hidden", !game.started || game.players.length===0);
 }
 function saveGame(){
   var error=document.getElementById("error");
+  if(!game.started){
+    if(error) error.textContent="Start a game before saving.";
+    return;
+  }
   if(game.players.length===0){
     if(error) error.textContent="Add at least one player before saving.";
     return;
   }
+  if(!game.startedAt) game.startedAt=new Date().toISOString();
+  game.started=true;
   save();
   updateResumeButton();
   updateSaveButton();
@@ -337,6 +342,22 @@ function updateResumeButton(){
   var saved=null;
   try{saved=localStorage.getItem("cabbageTableCurrent")}catch(e){}
   button.classList.toggle("hidden",!saved||game.started);
+  if(saved){
+    try{
+      var parsed=JSON.parse(saved);
+      if(parsed&&parsed.startedAt){
+        button.textContent="Resume Saved Game — "+getStartDateLabelFromSaved(parsed.startedAt);
+      } else {
+        button.textContent="Resume Saved Game";
+      }
+    }catch(e){button.textContent="Resume Saved Game";}
+  }
+}
+function getStartDateLabelFromSaved(value){
+  if(!value) return "";
+  var d=new Date(value);
+  if(isNaN(d.getTime())) return "";
+  return d.toLocaleString([], {dateStyle:"medium", timeStyle:"short"});
 }
 function resumeGame(){
   var saved=null;
@@ -344,7 +365,7 @@ function resumeGame(){
   if(!saved)return;
   try{
     game=JSON.parse(saved);
-    if(!game.theme)game.theme="dark";
+    if(!game.theme)game.theme="light";
     applyTheme();
     showGame();
   }catch(e){
@@ -354,6 +375,12 @@ function resumeGame(){
 function chooseRandomStarter(){
   game.startPlayer=Math.floor(Math.random()*game.players.length);
 }
+function getStartDateLabel(){
+  if(!game.startedAt) return "Unknown start";
+  var d=new Date(game.startedAt);
+  if(isNaN(d.getTime())) return "Unknown start";
+  return d.toLocaleString([], {dateStyle:"medium", timeStyle:"short"});
+}
 function startGame(){
   if(game.players.length<2){
     document.getElementById("error").textContent="Add at least two players.";
@@ -361,10 +388,11 @@ function startGame(){
   }
   chooseRandomStarter();
   game.started=true;
+  game.startedAt=new Date().toISOString();
   save();
   showGame();
 }
-function showGame(){document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");renderTable();renderFinal()}
+function showGame(){document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");renderTable();renderFinal();updateSaveButton();}
 function k(pid,r){return pid+"|"+r}
 function entry(pid,r){return game.entries[k(pid,r)]||null}
 function total(pid){var t=0;for(var r=0;r<13;r++){var x=entry(pid,r);if(!x)continue;if(x.type==="full")t=0;else if(x.type==="score")t+=x.value}return t}
