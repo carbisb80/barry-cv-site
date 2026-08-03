@@ -528,15 +528,16 @@ function downloadBlankScoreSheetPDF(){
   function drawHeader(){
     var x = margin;
     doc.setDrawColor(70);
-    doc.setFillColor(235, 235, 235);
-    doc.rect(x, y, colWidth, headerHeight, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.rect(x, y, colWidth, headerHeight, 'FD');
     doc.setTextColor(20, 20, 20);
     doc.setFontSize(12);
     doc.text('Round', x + 6, y + 20);
 
     for(var pi=0; pi<game.players.length; pi++){
       x = margin + colWidth * (pi + 1);
-      doc.rect(x, y, colWidth, headerHeight, 'F');
+      doc.setFillColor(255, 255, 255);
+      doc.rect(x, y, colWidth, headerHeight, 'FD');
       var name = game.players[pi].name;
       var lines = doc.splitTextToSize(name, colWidth - 12);
       doc.setTextColor(20, 20, 20);
