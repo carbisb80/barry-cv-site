@@ -507,58 +507,101 @@ function downloadBlankScoreSheetPDF(){
   var doc = new PdfConstructor({unit:'pt',format:'a4'});
   var margin = 36;
   var pageWidth = doc.internal.pageSize.getWidth();
-  var availableWidth = pageWidth - margin * 2;
+  var pageHeight = doc.internal.pageSize.getHeight();
+  var tableWidth = pageWidth - margin * 2;
   var columns = game.players.length + 1;
-  var colWidth = Math.max(60, Math.floor(availableWidth / columns));
-  var rowHeight = 20;
+  var colWidth = Math.max(90, Math.floor(tableWidth / columns));
+  var rowHeight = 34;
+  var headerHeight = 46;
   var y = margin;
+
   doc.setFontSize(18);
   doc.text('Cabbage Score Sheet', margin, y);
-  y += 24;
+  y += 28;
   doc.setFontSize(11);
   doc.text('Players: ' + game.players.map(function(p){return p.name}).join(', '), margin, y);
   y += 18;
   doc.setFontSize(10);
-  doc.text('Gold cells mark starter positions for each round.', margin, y);
-  y += 22;
-  var headerY = y;
-  var x = margin;
-  doc.setFillColor(220, 220, 220);
-  doc.rect(x, headerY - 14, colWidth, rowHeight, 'F');
-  doc.setTextColor(0, 0, 0);
-  doc.text('Round', x + 4, headerY);
-  for(var pi=0; pi<game.players.length; pi++){
-    x = margin + colWidth * (pi + 1);
-    doc.rect(x, headerY - 14, colWidth, rowHeight, 'F');
-    var name = game.players[pi].name;
-    doc.text(name, x + 4, headerY);
-  }
-  y += rowHeight;
-  for(var ri=0; ri<rounds.length; ri++){
-    x = margin;
-    doc.rect(x, y - 14, colWidth, rowHeight, 'S');
-    doc.text(rounds[ri], x + 4, y);
-    for(var pi2=0; pi2<game.players.length; pi2++){
-      x = margin + colWidth * (pi2 + 1);
-      var starterIndex = (game.startPlayer + ri) % game.players.length;
-      if(pi2 === starterIndex){
-        doc.setFillColor(255, 212, 81);
-        doc.rect(x, y - 14, colWidth, rowHeight, 'F');
-        doc.setTextColor(0, 0, 0);
-        doc.rect(x, y - 14, colWidth, rowHeight, 'S');
-      } else {
-        doc.setFillColor(255, 255, 255);
-        doc.rect(x, y - 14, colWidth, rowHeight, 'F');
-        doc.setTextColor(0, 0, 0);
-        doc.rect(x, y - 14, colWidth, rowHeight, 'S');
-      }
+  doc.text('Starter cells are highlighted in gold.', margin, y);
+  y += 24;
+
+  function drawHeader(){
+    var x = margin;
+    doc.setDrawColor(70);
+    doc.setFillColor(235, 235, 235);
+    doc.rect(x, y, colWidth, headerHeight, 'F');
+    doc.setTextColor(20, 20, 20);
+    doc.setFontSize(12);
+    doc.text('Round', x + 6, y + 20);
+
+    for(var pi=0; pi<game.players.length; pi++){
+      x = margin + colWidth * (pi + 1);
+      doc.rect(x, y, colWidth, headerHeight, 'F');
+      var name = game.players[pi].name;
+      var lines = doc.splitTextToSize(name, colWidth - 12);
+      doc.text(lines, x + colWidth / 2, y + 18, { align: 'center' });
     }
-    y += rowHeight;
-    if(y + rowHeight > doc.internal.pageSize.getHeight() - margin){
+    for(var col=0; col<columns; col++){
+      doc.rect(margin + colWidth * col, y, colWidth, headerHeight, 'S');
+    }
+    y += headerHeight;
+  }
+
+  function addPageHeader(){
+    if(y !== margin){
       doc.addPage();
       y = margin;
     }
+    drawHeader();
   }
+
+  drawHeader();
+
+  for(var ri=0; ri<rounds.length; ri++){
+    if(y + rowHeight + margin > pageHeight){
+      addPageHeader();
+    }
+    var x = margin;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(x, y, colWidth, rowHeight, 'F');
+    doc.setTextColor(20, 20, 20);
+    doc.setFontSize(11);
+    doc.text(rounds[ri], x + 6, y + 22);
+    doc.rect(x, y, colWidth, rowHeight, 'S');
+
+    var starterIndex = (game.startPlayer + ri) % game.players.length;
+    for(var pi2=0; pi2<game.players.length; pi2++){
+      x = margin + colWidth * (pi2 + 1);
+      if(pi2 === starterIndex){
+        doc.setFillColor(255, 212, 81);
+      } else {
+        doc.setFillColor(255, 255, 255);
+      }
+      doc.rect(x, y, colWidth, rowHeight, 'F');
+      doc.setDrawColor(70);
+      doc.rect(x, y, colWidth, rowHeight, 'S');
+    }
+    y += rowHeight;
+  }
+
+  if(y + rowHeight + margin > pageHeight){
+    doc.addPage();
+    y = margin;
+  }
+  var x = margin;
+  doc.setFillColor(235, 235, 235);
+  doc.rect(x, y, colWidth, rowHeight, 'F');
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(12);
+  doc.text('Totals', x + 6, y + 22);
+  doc.rect(x, y, colWidth, rowHeight, 'S');
+  for(var pi3=0; pi3<game.players.length; pi3++){
+    x = margin + colWidth * (pi3 + 1);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(x, y, colWidth, rowHeight, 'F');
+    doc.rect(x, y, colWidth, rowHeight, 'S');
+  }
+
   doc.save('cabbage-blank-score-sheet-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.pdf');
 }
 function updateResumeButton(){
