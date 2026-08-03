@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+const pageTitle = "Team Picker";
 
 const defaultTeams = [
   "Arsenal | Premier League | 84",
@@ -125,6 +126,25 @@ export default function TeamPickerPage() {
     if (saved) {
       setTeamList(saved);
     }
+  }, []);
+
+  useEffect(() => {
+    document.title = pageTitle;
+    let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = "/favicon-team-picker.svg";
+
+    let appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
+    if (!appleLink) {
+      appleLink = document.createElement("link");
+      appleLink.rel = "apple-touch-icon";
+      document.head.appendChild(appleLink);
+    }
+    appleLink.href = "/favicon-team-picker.svg";
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function sanitizeText(input: string) {
   if (!input) return input;
@@ -177,6 +177,25 @@ function PdfLabel({ text }: { text: string }) {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = "Barry Carbis | CV";
+    let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = "/favicon-cv.svg";
+
+    let appleLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
+    if (!appleLink) {
+      appleLink = document.createElement("link");
+      appleLink.rel = "apple-touch-icon";
+      document.head.appendChild(appleLink);
+    }
+    appleLink.href = "/favicon-cv.svg";
+  }, []);
+
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const pdfTemplateRef = useRef<HTMLDivElement | null>(null);
