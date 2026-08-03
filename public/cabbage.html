@@ -54,7 +54,7 @@ button.danger{background:linear-gradient(#c55b6a,#883544)}
 button.eye{width:50px;padding:0;font-size:1.35rem}
 .hidden{display:none!important}
 .player{display:flex;align-items:center;gap:10px;padding:10px;margin-top:10px;border:1px solid #51657e;border-radius:13px;background:#ffffff0b}.player strong{flex:1}
-.tablewrap{overflow:auto;max-height:72vh;border:1px solid #51657e;border-radius:17px;-webkit-overflow-scrolling:touch}
+.tablewrap{overflow-x:auto;overflow-y:visible;max-height:none;border:1px solid #51657e;border-radius:17px;-webkit-overflow-scrolling:touch}
 table{
   width:100%;min-width:auto;border-collapse:separate;border-spacing:6px;
   background:transparent
@@ -195,7 +195,7 @@ tfoot td:first-child{z-index:9;color:var(--gold)}
 <div class="setup-actions">
   <button class="primary" onclick="startGame()">Start Game</button>
   <button id="resumeButton" class="hidden" onclick="resumeGame()">Resume Saved Game</button>
-  <button type="button" onclick="goToGameScreen()">Game Screen</button>
+  <button id="gameScreenButton" type="button" onclick="goToGameScreen()">Game Screen</button>
 </div>
 </section>
 
@@ -268,21 +268,31 @@ function setTheme(theme){
   save();
 }
 function goToGameScreen(){
-  if(game && game.started && game.players && game.players.length){
-    try {
-      var saved = localStorage.getItem('cabbageTableCurrent');
-      if (saved) {
-        game = JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn('Could not restore saved game for Game Screen', e);
+  var button=document.getElementById('gameScreenButton');
+  if(button && button.disabled) return;
+  var saved=null;
+  var hasSaved=false;
+  try{
+    saved=localStorage.getItem('cabbageTableCurrent');
+    if(saved){
+      var parsed=JSON.parse(saved);
+      hasSaved=!!(parsed && parsed.started);
     }
-    if (!game.theme) game.theme = 'light';
+  }catch(e){
+    console.warn('Could not read saved game for Game Screen', e);
+  }
+  if(game && game.started && game.players && game.players.length){
+    if(hasSaved){
+      try{game=JSON.parse(saved)}catch(e){console.warn('Could not restore saved game for Game Screen', e)}
+    }
+    if(!game.theme) game.theme='light';
     applyTheme();
     showGame();
     renderSavedGames();
     setStatus('Game screen opened.');
     setTimeout(clearStatus, 1600);
+  } else if(hasSaved){
+    resumeGame();
   } else {
     document.getElementById('setup').classList.remove('hidden');
     document.getElementById('game').classList.add('hidden');
@@ -293,6 +303,7 @@ function goHome(){
   document.getElementById('game').classList.add('hidden');
   document.getElementById('setup').classList.remove('hidden');
   updateResumeButton();
+  updateGameScreenButton();
   renderPlayers();
 }
 function getPreviousNameKey(){
@@ -474,6 +485,20 @@ function updateResumeButton(){
       }
     }catch(e){button.textContent="Resume Saved Game";}
   }
+  updateGameScreenButton();
+}
+function updateGameScreenButton(){
+  var button=document.getElementById('gameScreenButton');
+  if(!button) return;
+  var saved=null;
+  try{saved=localStorage.getItem('cabbageTableCurrent')}catch(e){}
+  var hasSaved=false;
+  if(saved){
+    try{var parsed=JSON.parse(saved); hasSaved = !!(parsed && parsed.started);}catch(e){hasSaved=false;}
+  }
+  var enabled = (game.started && game.players && game.players.length>0) || hasSaved;
+  button.disabled = !enabled;
+  button.classList.toggle('disabled', !enabled);
 }
 function getStartDateLabelFromSaved(value){
   if(!value) return "";
@@ -492,6 +517,7 @@ function resumeGame(){
     applyTheme();
     showGame();
     renderSavedGames();
+    updateGameScreenButton();
     setStatus("Saved game loaded.");
     setTimeout(clearStatus, 2200);
   }catch(e){
@@ -518,7 +544,7 @@ function startGame(){
   save();
   showGame();
 }
-function showGame(){document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");renderTable();renderFinal();updateSaveButton();}
+function showGame(){document.getElementById("setup").classList.add("hidden");document.getElementById("game").classList.remove("hidden");renderTable();renderFinal();updateSaveButton();updateGameScreenButton();}
 function k(pid,r){return pid+"|"+r}
 function entry(pid,r){return game.entries[k(pid,r)]||null}
 function total(pid){var t=0;for(var r=0;r<13;r++){var x=entry(pid,r);if(!x)continue;if(x.type==="full")t=0;else if(x.type==="score")t+=x.value}return t}
@@ -567,7 +593,7 @@ function load(){
   loadPreviousNames();
   renderSavedGames();
   var s=localStorage.getItem("cabbageTableCurrent");
-  if(!s){applyTheme();updateResumeButton();return}
+  if(!s){applyTheme();updateResumeButton();updateGameScreenButton();return}
   try{
     var savedGame=JSON.parse(s);
     if(savedGame.started){
@@ -620,6 +646,8 @@ function newGameSamePlayers(){
   save();
   renderTable();
   renderFinal();
+  updateResumeButton();
+  updateGameScreenButton();
 }
 
 function newGameNewPlayers(){
@@ -652,6 +680,7 @@ function newGameNewPlayers(){
   renderPlayers();
   applyTheme();
   updateResumeButton();
+  updateGameScreenButton();
 }
 // Allow hardware keyboard numeric entry when the modal is open
 document.addEventListener('keydown', function(e){
