@@ -137,6 +137,8 @@ const technicalSkills = {
   "Cloud & Tools": "AWS, Azure, Docker, BrowserStack, Grafana",
 };
 
+const personalWebsite = "www.barrycarbis.co.uk";
+
 function SectionHeading({
   eyebrow,
   title,
@@ -401,6 +403,11 @@ const handleDownloadPDF = useCallback(async () => {
                     alignment: AlignmentType.RIGHT,
                     spacing: { after: 60 },
                     children: [new TextRun({ text: "07701 078087", size: 18, color: white })],
+                  }),
+                  new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    spacing: { after: 60 },
+                    children: [new TextRun({ text: personalWebsite, size: 18, color: white })],
                   }),
                   new Paragraph({
                     alignment: AlignmentType.RIGHT,
@@ -787,6 +794,7 @@ const handleDownloadPDF = useCallback(async () => {
         <div className="contact-grid">
           <a href="mailto:barry.carbis@sky.com">barry.carbis@sky.com</a>
           <a href="tel:07701078087">07701 078087</a>
+          <a href="https://www.barrycarbis.co.uk">www.barrycarbis.co.uk</a>
           <p>Galston, East Ayrshire, United Kingdom</p>
         </div>
       </section>
@@ -831,7 +839,7 @@ const handleDownloadPDF = useCallback(async () => {
       Quality Strategy • Automation Transformation • Playwright • CI/CD • Release Confidence
     </div>
     <div style={{ fontSize: 12, color: "#5c647d" }}>
-      barry.carbis@sky.com · 07701 078087 · East Ayrshire, United Kingdom
+      barry.carbis@sky.com · 07701 078087 · www.barrycarbis.co.uk · East Ayrshire, United Kingdom
     </div>
     <div style={{ height: 2, background: "#d6b25e", margin: "16px 0" }} />
   </div>
