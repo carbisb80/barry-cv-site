@@ -54,6 +54,7 @@ const experience = [
     summary:
       "Leading quality engineering strategy across multiple applications within financial services, combining technical modernisation with organisation-wide quality leadership.",
     bullets: [
+      "Created Sentinel, a Quality Intelligence Platform to bring quality metrics, automation insight and release confidence into one operational view.",
       "Built a scalable Playwright + TypeScript framework for UI and API testing.",
       "Co-ordinating on-shore and offshore teams to deliver automation, reporting and process improvements.",
       "Led the migration of manual tests to automated workflows.",
@@ -201,67 +202,98 @@ export default function HomePage() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const pdfTemplateRef = useRef<HTMLDivElement | null>(null);
+  const MAX_EXPORT_SIZE_BYTES = 20 * 1024 * 1024;
 
-const handleDownloadPDF = useCallback(async () => {
-  if (isGeneratingPdf || !pdfTemplateRef.current) return;
-  setIsGeneratingPdf(true);
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, []);
 
-  try {
-    const [{ jsPDF }, html2canvas] = await Promise.all([
-      import("jspdf"),
-      import("html2canvas").then((module) => module.default || module),
-    ]);
+  const handleDownloadPDF = useCallback(async () => {
+    if (isGeneratingPdf || !pdfTemplateRef.current) return;
+    setIsGeneratingPdf(true);
 
-    const pdf = new jsPDF({ unit: "pt", format: "a4" });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+    try {
+      const [{ jsPDF }, html2canvas] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas").then((module) => module.default || module),
+      ]);
 
-    const margin = 28;
-    const usableWidth = pageWidth - margin * 2;
-    const bottomLimit = pageHeight - margin;
+      const renderPdf = async (scale: number) => {
+        const pdf = new jsPDF({ unit: "pt", format: "a4", compress: true });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
 
-    let y = margin;
+        const margin = 28;
+        const usableWidth = pageWidth - margin * 2;
+        const bottomLimit = pageHeight - margin;
 
-    const blocks = Array.from(
-      pdfTemplateRef.current.querySelectorAll(".pdf-block")
-    ) as HTMLElement[];
+        let y = margin;
 
-    for (const block of blocks) {
-      const forceNewPage = block.classList.contains("pdf-new-page");
+        const blocks = Array.from(
+          pdfTemplateRef.current!.querySelectorAll(".pdf-block")
+        ) as HTMLElement[];
 
-      if (forceNewPage && y > margin) {
-        pdf.addPage();
-        y = margin;
+        for (const block of blocks) {
+          const forceNewPage = block.classList.contains("pdf-new-page");
+
+          if (forceNewPage && y > margin) {
+            pdf.addPage();
+            y = margin;
+          }
+
+          const canvas = await html2canvas(block, {
+            backgroundColor: "#ffffff",
+            scale,
+            useCORS: true,
+            windowWidth: block.scrollWidth,
+            windowHeight: block.scrollHeight,
+            logging: false,
+          });
+
+          const imgData = canvas.toDataURL("image/jpeg", 0.8);
+          const imgHeight = (canvas.height * usableWidth) / canvas.width;
+
+          if (y + imgHeight > bottomLimit && y > margin) {
+            pdf.addPage();
+            y = margin;
+          }
+
+          pdf.addImage(imgData, "JPEG", margin, y, usableWidth, imgHeight);
+          y += imgHeight + 10;
+        }
+
+        return pdf;
+      };
+
+      let finalPdf: Awaited<ReturnType<typeof renderPdf>> | null = null;
+      const scales = [1.5, 1.25, 1, 0.75];
+
+      for (const scale of scales) {
+        finalPdf = await renderPdf(scale);
+        const blob = finalPdf.output("blob");
+        if (blob.size <= MAX_EXPORT_SIZE_BYTES) {
+          downloadBlob(blob, "Barry-Carbis-CV.pdf");
+          return;
+        }
       }
 
-      const canvas = await html2canvas(block, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-        windowWidth: block.scrollWidth,
-        windowHeight: block.scrollHeight,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const imgHeight = (canvas.height * usableWidth) / canvas.width;
-
-      if (y + imgHeight > bottomLimit && y > margin) {
-        pdf.addPage();
-        y = margin;
+      if (finalPdf) {
+        const blob = finalPdf.output("blob");
+        downloadBlob(blob, "Barry-Carbis-CV.pdf");
       }
-
-      pdf.addImage(imgData, "PNG", margin, y, usableWidth, imgHeight);
-      y += imgHeight + 10;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsGeneratingPdf(false);
     }
-
-    
-    pdf.save("Barry-Carbis-CV.pdf");
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setIsGeneratingPdf(false);
-  }
-}, [isGeneratingPdf]);
+  }, [downloadBlob, isGeneratingPdf]);
 
   const handleDownloadDocx = useCallback(async () => {
     if (isGeneratingDocx) return;
@@ -587,18 +619,14 @@ const handleDownloadPDF = useCallback(async () => {
       });
 
       const blob = await Packer.toBlob(doc);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Barry-Carbis-CV.docx";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      if (blob.size > MAX_EXPORT_SIZE_BYTES) {
+        console.warn("DOCX export exceeds the 20MB target. The default text-based export is still compact, but embedded content should be reviewed.");
+      }
+      downloadBlob(blob, "Barry-Carbis-CV.docx");
     } finally {
       setIsGeneratingDocx(false);
     }
-  }, [isGeneratingDocx]);
+  }, [downloadBlob, isGeneratingDocx]);
 
   return (
     <main className="page-shell">
