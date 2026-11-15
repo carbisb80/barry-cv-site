@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
         { source: '/glossary-code-v6.js', destination: `${labOrigin}/glossary-code-v6.js` },
         { source: '/glossary-links-v7.js', destination: `${labOrigin}/glossary-links-v7.js` },
         { source: '/api-security-v1.js', destination: `${labOrigin}/api-security-v1.js` },
+        { source: '/academy-simple-v2.js', destination: `${labOrigin}/academy-simple-v2.js` },
         { source: '/api/customers', destination: `${labOrigin}/api/customers` },
         { source: '/api/transactions', destination: `${labOrigin}/api/transactions` },
         { source: '/api/login', destination: `${labOrigin}/api/login` },
